@@ -41,7 +41,7 @@ class ThemeInstaller extends BaseInstaller
 
         $repo = Repository::open($theme->getThemeDir());
         try {
-            if ( ! $this->isEmpty($theme->getThemeDir())) {
+            if ($this->isEmpty($theme->getThemeDir())) {
                 $repo->cloneFrom($theme->getRemote(), $theme->getThemeDir());
             } else {
                 $repo->pull('origin', 'master');
