@@ -4,6 +4,7 @@ namespace OFFLINE\Bootstrapper\October\Installer;
 
 
 use GitElephant\Repository;
+use OFFLINE\Bootstrapper\October\Config\Entities\Theme;
 use Symfony\Component\Process\Exception\InvalidArgumentException;
 use Symfony\Component\Process\Exception\LogicException;
 use Symfony\Component\Process\Exception\RuntimeException;
@@ -26,34 +27,30 @@ class ThemeInstaller extends BaseInstaller
      */
     public function install()
     {
-        try {
-            $config = $this->config->cms['theme'];
-        } catch (\RuntimeException $e) {
-            // No theme set
+        if (! isset($this->config->cms['theme'])) {
             return false;
         }
 
-        list($theme, $remote) = $this->parse($config);
-        if ($remote === false) {
+        $theme = new Theme($this->config->cms['theme']);
+
+        if (! $theme->hasRemote()) {
             return $this->installViaArtisan($theme);
         }
 
-        $themeDir = getcwd() . DS . implode(DS, ['themes', $theme]);
-        $this->mkdir($themeDir);
+        $this->mkdir($theme->getThemeDir());
 
-        if ( ! $this->isEmpty($themeDir)) {
-            $this->write(sprintf('<comment>-> Theme "%s" is already installed. Skipping.</comment>', $theme));
-            return;
-        }
-
-        $repo = Repository::open($themeDir);
+        $repo = Repository::open($theme->getThemeDir());
         try {
-            $repo->cloneFrom($remote, $themeDir);
+            if ( ! $this->isEmpty($theme->getThemeDir())) {
+                $repo->cloneFrom($theme->getRemote(), $theme->getThemeDir());
+            } else {
+                $repo->pull('origin', 'master');
+            }
         } catch (RuntimeException $e) {
             throw new RuntimeException('Error while cloning theme repo: ' . $e->getMessage());
         }
 
-        $this->cleanup($themeDir);
+        $this->cleanup($theme->getThemeDir());
 
         return true;
     }
@@ -90,12 +87,12 @@ class ThemeInstaller extends BaseInstaller
      * @throws LogicException
      * @throws RuntimeException
      */
-    protected function installViaArtisan($theme)
+    protected function installViaArtisan(Theme $theme)
     {
-        $exitCode = (new Process("php artisan theme:install {$theme}"))->run();
+        $exitCode = (new Process("php artisan theme:install {$theme->getName()}"))->run();
 
         if ($exitCode !== $this::EXIT_CODE_OK) {
-            throw new RuntimeException(sprintf('Error while installing theme "%s" via artisan.', $theme));
+            throw new RuntimeException(sprintf('Error while installing theme "%s" via artisan.', $theme->getName()));
         }
 
         return true;

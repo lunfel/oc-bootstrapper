@@ -3,6 +3,8 @@
 namespace OFFLINE\Bootstrapper\October\Util;
 
 
+use OFFLINE\Bootstrapper\October\Config\Entities\Plugin;
+
 class Gitignore
 {
     /**
@@ -47,18 +49,18 @@ class Gitignore
         $this->contents[] = PHP_EOL . PHP_EOL;
     }
 
-    public function addPlugin($vendor, $plugin)
+    public function addPlugin(Plugin $plugin)
     {
-        $header = sprintf("# %s.%s", $vendor, $plugin);
+        $header = sprintf("# %s.%s", $plugin->getVendor(), $plugin->getName());
         if ($this->hasLine($header)) {
             return;
         }
 
         $this->newLine();
         $this->add($header);
-        $this->add('!plugins/' . $vendor);
-        $this->add('!plugins/' . $vendor . '/' . $plugin);
-        $this->add('!plugins/' . $vendor . '/' . $plugin . '/**/*');
+        $this->add('!plugins/' . $plugin->getVendor());
+        $this->add('!plugins/' . $plugin->getVendor() . '/' . $plugin->getName());
+        $this->add('!plugins/' . $plugin->getVendor() . '/' . $plugin->getName() . '/**/*');
     }
 
 

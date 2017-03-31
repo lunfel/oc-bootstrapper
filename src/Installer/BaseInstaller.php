@@ -104,4 +104,19 @@ abstract class BaseInstaller
     protected function write($line) {
         $this->output->writeln($line);
     }
+
+    protected function writeInfo($line)
+    {
+        $this->write(sprintf('<info>%s</info>', $line));
+    }
+
+    protected function writeComment($line)
+    {
+        $this->write(sprintf('<comment>%s</comment>', $line));
+    }
+
+    protected function writeError($line)
+    {
+        $this->write(sprintf('<error>%s</error>', $line));
+    }
 }

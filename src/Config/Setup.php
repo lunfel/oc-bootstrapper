@@ -151,18 +151,15 @@ class Setup
      */
     protected function theme()
     {
-        try {
-            $activeTheme = explode(' ', $this->config->cms['theme']);
-        } catch (\RuntimeException $e) {
-            // No theme set
+        $themeName = $this->config->cms['theme']['name'] ?? null;
+
+        if ($themeName === null) {
             return false;
         }
 
-        $values = [
-            'activeTheme' => $activeTheme[0],
-        ];
-
-        $this->writer->write('cms', $values);
+        $this->writer->write('cms', [
+            'activeTheme' => $themeName
+        ]);
 
         return true;
     }

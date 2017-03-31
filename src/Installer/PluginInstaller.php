@@ -4,6 +4,7 @@ namespace OFFLINE\Bootstrapper\October\Installer;
 
 
 use GitElephant\Repository;
+use OFFLINE\Bootstrapper\October\Config\Entities\Plugin;
 use OFFLINE\Bootstrapper\October\Util\Gitignore;
 use Symfony\Component\Process\Exception\LogicException;
 use Symfony\Component\Process\Exception\RuntimeException;
@@ -27,7 +28,7 @@ class PluginInstaller extends BaseInstaller
         try {
             $config = $this->config->plugins;
         } catch (\RuntimeException $e) {
-            $this->write('<info> - Nothing to install</info>');
+            $this->writeInfo('- Nothing to install');
 
             // No plugin set
             return false;
@@ -36,48 +37,27 @@ class PluginInstaller extends BaseInstaller
         $isBare     = (bool)$this->config->git['bareRepo'];
         $exceptions = [];
 
-        foreach ($config as $plugin) {
+        foreach ($config as $pluginConfig) {
 
-            $this->write('<info> - ' . $plugin . '</info>');
+            $plugin = new Plugin($pluginConfig);
 
-            list($vendor, $plugin, $remote, $branch) = $this->parse($plugin);
-            $vendor = strtolower($vendor);
-            $plugin = strtolower($plugin);
+            $this->writeInfo(' - ' . $plugin);
 
-            $vendorDir = $this->createVendorDir($vendor);
-            $pluginDir = $vendorDir . DS . $plugin;
+            $this->mkdir($plugin->getVendorDir());
+            $this->mkdir($plugin->getPluginDir());
 
-            $this->mkdir($pluginDir);
-
-            if ( ! $this->isEmpty($pluginDir)) {
-                $this->write('<comment>   -> ' . sprintf('Plugin "%s" already installed. Skipping.', $plugin) . '</comment>');
+            if (! $plugin->hasRemote()) {
+                $this->handleMarketPlacePlugin($plugin);
                 continue;
             }
 
-            if ($remote === false) {
-                $this->installViaArtisan($vendor, $plugin);
-                continue;
-            }
-            
-            $repo = Repository::open($pluginDir);
-            try {
-                $repo->cloneFrom($remote, $pluginDir);
-                if ($branch !== false) {
-                    $this->write('<comment>   -> ' . sprintf('Checkout "%s" ...', $branch) . '</comment>');
-                    $repo->checkout($branch);
-                }
-            } catch (RuntimeException $e) {
-                $this->write('<error> - ' . 'Error while cloning plugin repo: ' . $e->getMessage() . '</error>');
-                continue;
-            }
-
-            (new Process("php artisan plugin:refresh {$vendor}.{$plugin}"))->run();
+            $this->handleGithubPlugin($plugin);
 
             if ($isBare) {
-                $this->gitignore->addPlugin($vendor, $plugin);
+                $this->gitignore->addPlugin($plugin);
             }
 
-            $this->cleanup($pluginDir);
+            $this->cleanup($plugin->getPluginDir());
         }
 
         return true;
@@ -106,6 +86,9 @@ class PluginInstaller extends BaseInstaller
             $matches[3] = false;
         }
 
+        $matches[0] = strtolower($matches[0]);
+        $matches[1] = strtolower($matches[1]);
+
         return $matches;
     }
 
@@ -133,16 +116,54 @@ class PluginInstaller extends BaseInstaller
      * @throws LogicException
      * @throws RuntimeException
      */
-    protected function installViaArtisan($vendor, $plugin)
+    protected function installViaArtisan(Plugin $plugin)
     {
-        $exitCode = (new Process("php artisan plugin:install {$vendor}.{$plugin}"))->run();
+        $exitCode = (new Process("php artisan plugin:install {$plugin->getVendor()}.{$plugin->getName()}"))->run();
 
         if ($exitCode !== $this::EXIT_CODE_OK) {
             throw new RuntimeException(
                 sprintf('Error while installing plugin %s via artisan. Is your database set up correctly?',
-                    $vendor . '.' . $plugin
+                    $plugin
                 )
             );
+        }
+    }
+
+    private function handleMarketPlacePlugin(Plugin $plugin)
+    {
+        if ( ! $this->isEmpty($plugin->getPluginDir())) {
+            $this->writeComment('   -> ' . sprintf('Plugin "%s" already installed. Skipping.', $plugin));
+            return;
+        }
+
+        $this->installViaArtisan($plugin);
+    }
+
+    private function handleGithubPlugin(Plugin $plugin)
+    {
+        $repo = Repository::open($plugin->getPluginDir());
+        try {
+            if ( ! $this->isEmpty($plugin->getPluginDir())) {
+                $repo->cloneFrom($plugin->getRemote(), $plugin->getPluginDir());
+                $this->checkout($plugin->getBranch(), $repo);
+            } else {
+                $this->checkout($plugin->getBranch(), $repo);
+                $repo->pull('origin', $plugin->getBranch());
+            }
+        } catch (RuntimeException $e) {
+            $this->writeError(' - ' . 'Error while cloning plugin repo: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * @param $branch
+     * @param $repo
+     */
+    private function checkout($branch, $repo)
+    {
+        if ($branch !== false) {
+            $this->writeComment('   -> ' . sprintf('Checkout "%s" ...', $branch));
+            $repo->checkout($branch);
         }
     }
 }

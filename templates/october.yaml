@@ -4,7 +4,9 @@ app:
     debug: true
 
 cms:
-    theme: name (user@remote.git)
+    theme:
+      name: name
+      remote: user@remote.git
     edgeUpdates: false
 
 database:
