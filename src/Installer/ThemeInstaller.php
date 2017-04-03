@@ -50,7 +50,7 @@ class ThemeInstaller extends BaseInstaller
             throw new RuntimeException('Error while cloning theme repo: ' . $e->getMessage());
         }
 
-        $this->cleanup($theme->getThemeDir());
+        // $this->cleanup($theme->getThemeDir());
 
         return true;
     }

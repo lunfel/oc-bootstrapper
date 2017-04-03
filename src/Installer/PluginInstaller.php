@@ -57,7 +57,7 @@ class PluginInstaller extends BaseInstaller
                 $this->gitignore->addPlugin($plugin);
             }
 
-            $this->cleanup($plugin->getPluginDir());
+            // $this->cleanup($plugin->getPluginDir());
         }
 
         return true;
