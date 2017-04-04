@@ -69,12 +69,12 @@ class Plugin extends AbstractEntity
 
     public function getVendorDir() : string
     {
-        return getcwd() . DS . implode(DS, ['plugins', $this->vendor]);
+        return getcwd() . DS . implode(DS, ['plugins', ucfirst($this->vendor)]);
     }
 
     public function getPluginDir() : string
     {
-        return $this->getVendorDir() . DS . $this->getName();
+        return $this->getVendorDir() . DS . ucfirst($this->getName());
     }
 
     public function __toString()
