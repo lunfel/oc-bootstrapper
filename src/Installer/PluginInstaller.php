@@ -143,7 +143,7 @@ class PluginInstaller extends BaseInstaller
     {
         $repo = Repository::open($plugin->getPluginDir());
         try {
-            if ( ! $this->isEmpty($plugin->getPluginDir())) {
+            if ($this->isEmpty($plugin->getPluginDir())) {
                 $repo->cloneFrom($plugin->getRemote(), $plugin->getPluginDir());
                 $this->checkout($plugin->getBranch(), $repo);
             } else {
