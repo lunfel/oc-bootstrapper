@@ -118,7 +118,7 @@ class PluginInstaller extends BaseInstaller
      */
     protected function installViaArtisan(Plugin $plugin)
     {
-        $exitCode = (new Process("php artisan plugin:install {$plugin->getVendor()}.{$plugin->getName()}"))->run();
+        $exitCode = (new Process("php artisan plugin:install {$plugin->getArtisanName()}"))->run();
 
         if ($exitCode !== $this::EXIT_CODE_OK) {
             throw new RuntimeException(

@@ -46,6 +46,11 @@ class Plugin extends AbstractEntity
         return $this->name;
     }
 
+    public function getArtisanName() : string
+    {
+        return sprintf('%s.%s', ucfirst($this->vendor), ucfirst($this->name));
+    }
+
     /**
      * @return string
      */
