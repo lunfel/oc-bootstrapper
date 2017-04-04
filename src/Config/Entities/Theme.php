@@ -19,7 +19,7 @@ class Theme extends AbstractEntity
     {
         $this->validate($theme);
 
-        $this->name = $theme['name'];
+        $this->name = strtolower($theme['name']);
         $this->remote = $theme['remote'] ?? null;
 
     }

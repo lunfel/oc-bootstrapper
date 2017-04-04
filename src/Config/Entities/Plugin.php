@@ -24,8 +24,8 @@ class Plugin extends AbstractEntity
     {
         $this->validate($plugin);
 
-        $this->vendor = $plugin['vendor'];
-        $this->name = $plugin['name'];
+        $this->vendor = strtolower($plugin['vendor']);
+        $this->name = strtolower($plugin['name']);
         $this->remote = $plugin['remote'] ?? null;
         $this->branch = $plugin['branch'] ?? null;
     }
@@ -48,7 +48,7 @@ class Plugin extends AbstractEntity
 
     public function getArtisanName() : string
     {
-        return sprintf('%s.%s', ucfirst($this->vendor), ucfirst($this->name));
+        return sprintf('%s.%s', $this->getVendor(), $this->getName());
     }
 
     /**
@@ -74,17 +74,17 @@ class Plugin extends AbstractEntity
 
     public function getVendorDir() : string
     {
-        return getcwd() . DS . implode(DS, ['plugins', ucfirst($this->vendor)]);
+        return getcwd() . DS . implode(DS, ['plugins', $this->getVendor()]);
     }
 
     public function getPluginDir() : string
     {
-        return $this->getVendorDir() . DS . ucfirst($this->getName());
+        return $this->getVendorDir() . DS . $this->getName();
     }
 
     public function __toString()
     {
-        $output = sprintf('%s.%s', $this->vendor, $this->name);
+        $output = sprintf('%s.%s', $this->getVendor(), $this->getName());
 
         if ($this->hasRemote()) {
             $output .= sprintf(' (%s#%s)', $this->remote, $this->branch);
